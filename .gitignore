@@ -1,0 +1,48 @@
+# Root-level
+node_modules/
+.env
+.env.*          # Catch frontend/backend env files like .env.development, etc.
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+
+# OS files
+Thumbs.db
+ehthumbs.db
+*.swp
+
+# Logs
+logs/
+*.log
+*.gz
+
+# IDEs/editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# frontend (React + Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.vite/
+frontend/.cache/
+frontend/.DS_Store
+
+# backend (Express.js)
+backend/node_modules/
+backend/.env
+backend/.DS_Store
+backend/logs/
+backend/uploads/        # If you use file uploads and store them locally
+backend/database.sqlite # If using SQLite
+
+# Optional: TypeScript artifacts (if added)
+*.tsbuildinfo
