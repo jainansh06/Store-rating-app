@@ -133,13 +133,34 @@ export const AuthProvider = ({ children }) => {
   };
 
   const addStore = (storeData) => {
-    const newStore = {
-      id: stores.length + 1,
-      ...storeData,
-      ratings: []
+    const addStore = (storeData, createNewOwner = false) => {
+      let ownerId = storeData.existingOwnerId || null;
+      
+      // If creating a new owner, add them first
+      if (createNewOwner) {
+        const newOwner = {
+          id: users.length + 1,
+          name: `Store Owner for ${storeData.name}`,
+          email: storeData.ownerEmail,
+          password: storeData.ownerPassword,
+          address: storeData.address,
+          role: 'store_owner'
+        };
+        setUsers(prev => [...prev, newOwner]);
+        ownerId = newOwner.id;
+      }
+      
+      const newStore = {
+        id: stores.length + 1,
+        name: storeData.name,
+        email: storeData.email,
+        address: storeData.address,
+        ownerId: ownerId,
+        ratings: []
+      };
+      setStores(prev => [...prev, newStore]);
+      return newStore;
     };
-    setStores(prev => [...prev, newStore]);
-    return newStore;
   };
 
   const submitRating = (storeId, rating) => {
