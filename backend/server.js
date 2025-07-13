@@ -9,6 +9,7 @@ const userRoutes = require('./routes/users');
 const storeRoutes = require('./routes/stores');
 const ratingRoutes = require('./routes/ratings');
 const adminRoutes = require('./routes/admin');
+const healthRoutes = require('./routes/health');
 
 const app = express();
 
@@ -39,14 +40,11 @@ app.use('/api/users', userRoutes);
 app.use('/api/stores', storeRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/health', healthRoutes);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV 
-  });
+app.get('/health', (req, res) => {
+  res.redirect('/api/health');
 });
 
 // Error handling middleware
