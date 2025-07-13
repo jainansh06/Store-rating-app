@@ -2,18 +2,26 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 const AddStoreModal = ({ onClose }) => {
-  const { addStore } = useAuth();
+  const { addStore, users } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    address: ''
+    address: '',
+    ownerEmail: '',
+    ownerPassword: '',
+    createNewOwner: false
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
+  // Get existing store owners
+  const storeOwners = users.filter(user => user.role === 'store_owner');
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -40,6 +48,26 @@ const AddStoreModal = ({ onClose }) => {
       newErrors.address = 'Address must not exceed 400 characters';
     }
 
+    // Validate owner information
+    if (formData.createNewOwner) {
+      if (!formData.ownerEmail) {
+        newErrors.ownerEmail = 'Owner email is required';
+      } else if (!/\S+@\S+\.\S+/.test(formData.ownerEmail)) {
+        newErrors.ownerEmail = 'Please enter a valid email';
+      } else if (users.find(u => u.email === formData.ownerEmail)) {
+        newErrors.ownerEmail = 'Email already exists';
+      }
+
+      if (!formData.ownerPassword) {
+        newErrors.ownerPassword = 'Owner password is required';
+      } else if (formData.ownerPassword.length < 8 || formData.ownerPassword.length > 16) {
+        newErrors.ownerPassword = 'Password must be 8-16 characters';
+      } else if (!/[A-Z]/.test(formData.ownerPassword)) {
+        newErrors.ownerPassword = 'Password must contain at least one uppercase letter';
+      } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.ownerPassword)) {
+        newErrors.ownerPassword = 'Password must contain at least one special character';
+      }
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -51,7 +79,7 @@ const AddStoreModal = ({ onClose }) => {
 
     setLoading(true);
     try {
-      addStore(formData);
+      addStore(formData, formData.createNewOwner);
       onClose();
     } catch (error) {
       setErrors({ general: 'Failed to add store' });
@@ -117,6 +145,66 @@ const AddStoreModal = ({ onClose }) => {
             {errors.address && <div className="form-error">{errors.address}</div>}
           </div>
 
+          <div className="form-group">
+            <label className="form-label">Store Owner</label>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                <input
+                  type="checkbox"
+                  name="createNewOwner"
+                  checked={formData.createNewOwner}
+                  onChange={handleChange}
+                />
+                Create new store owner account
+              </label>
+            </div>
+
+            {!formData.createNewOwner && storeOwners.length > 0 && (
+              <select
+                name="existingOwnerId"
+                className="form-select"
+                value={formData.existingOwnerId || ''}
+                onChange={handleChange}
+              >
+                <option value="">Select existing store owner (optional)</option>
+                {storeOwners.map(owner => (
+                  <option key={owner.id} value={owner.id}>
+                    {owner.name} ({owner.email})
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {formData.createNewOwner && (
+              <>
+                <div style={{ marginTop: '10px' }}>
+                  <label className="form-label">Owner Email</label>
+                  <input
+                    type="email"
+                    name="ownerEmail"
+                    className="form-input"
+                    value={formData.ownerEmail}
+                    onChange={handleChange}
+                    placeholder="Enter owner email"
+                  />
+                  {errors.ownerEmail && <div className="form-error">{errors.ownerEmail}</div>}
+                </div>
+
+                <div style={{ marginTop: '10px' }}>
+                  <label className="form-label">Owner Password</label>
+                  <input
+                    type="password"
+                    name="ownerPassword"
+                    className="form-input"
+                    value={formData.ownerPassword}
+                    onChange={handleChange}
+                    placeholder="Enter owner password (8-16 chars, 1 uppercase, 1 special)"
+                  />
+                  {errors.ownerPassword && <div className="form-error">{errors.ownerPassword}</div>}
+                </div>
+              </>
+            )}
+          </div>
           <div className="modal-actions">
             <button
               type="button"
