@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import UserManagement from './UserManagement';
 import StoreManagement from './StoreManagement';
@@ -8,6 +9,19 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { users, stores, ratings } = useAuth();
 
+  // Handle hash-based navigation for password change
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#password') {
+        setActiveTab('password');
+        window.location.hash = '';
+      }
+    };
+
+    handleHashChange(); // Check on mount
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
   const totalUsers = users.filter(u => u.role !== 'admin').length;
   const totalStores = stores.length;
   const totalRatings = ratings.length;
