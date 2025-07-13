@@ -6,6 +6,7 @@ const { validateUserCreation, validateStoreCreation } = require('../middleware/v
 
 const router = express.Router();
 
+// Get dashboard statistics
 router.get('/dashboard', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const [usersResult, storesResult, ratingsResult] = await Promise.all([
@@ -32,12 +33,12 @@ router.get('/dashboard', authenticateToken, requireRole(['admin']), async (req, 
   }
 });
 
-
+// Create new user
 router.post('/users', authenticateToken, requireRole(['admin']), validateUserCreation, async (req, res) => {
   const { name, email, password, address, role } = req.body;
   
   try {
-    
+    // Check if email already exists
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE email = $1',
       [email]
@@ -50,8 +51,10 @@ router.post('/users', authenticateToken, requireRole(['admin']), validateUserCre
       });
     }
     
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
     
+    // Create user
     const result = await pool.query(
       'INSERT INTO users (name, email, password, address, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, address, role, created_at',
       [name, email, hashedPassword, address, role]
@@ -72,15 +75,32 @@ router.post('/users', authenticateToken, requireRole(['admin']), validateUserCre
   }
 });
 
+// Create new store
 router.post('/stores', authenticateToken, requireRole(['admin']), validateStoreCreation, async (req, res) => {
-  const { name, email, address, ownerId } = req.body;
+  const { name, email, address, ownerId, createNewOwner, ownerEmail, ownerPassword, ownerName } = req.body;
   
   try {
-
-    if (ownerId) {
+    let finalOwnerId = ownerId;
+    
+    // If creating a new owner, create the user first
+    if (createNewOwner && ownerEmail && ownerPassword) {
+      // Hash password for new owner
+      const hashedPassword = await bcrypt.hash(ownerPassword, 12);
+      
+      // Create new store owner
+      const ownerResult = await pool.query(
+        'INSERT INTO users (name, email, password, address, role) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+        [ownerName || `Store Owner for ${name}`, ownerEmail, hashedPassword, address, 'store_owner']
+      );
+      
+      finalOwnerId = ownerResult.rows[0].id;
+    }
+    
+    // If ownerId is provided, verify the user exists and is a store owner
+    if (finalOwnerId) {
       const ownerResult = await pool.query(
         'SELECT id FROM users WHERE id = $1 AND role = $2',
-        [ownerId, 'store_owner']
+        [finalOwnerId, 'store_owner']
       );
       
       if (ownerResult.rows.length === 0) {
@@ -91,9 +111,10 @@ router.post('/stores', authenticateToken, requireRole(['admin']), validateStoreC
       }
     }
     
+    // Create store
     const result = await pool.query(
       'INSERT INTO stores (name, email, address, owner_id) VALUES ($1, $2, $3, $4) RETURNING id, name, email, address, owner_id, created_at',
-      [name, email, address, ownerId || null]
+      [name, email, address, finalOwnerId || null]
     );
     
     res.status(201).json({
@@ -111,11 +132,13 @@ router.post('/stores', authenticateToken, requireRole(['admin']), validateStoreC
   }
 });
 
+// Update user
 router.put('/users/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
   const { id } = req.params;
   const { name, email, address, role } = req.body;
   
   try {
+    // Check if user exists
     const userCheck = await pool.query(
       'SELECT id FROM users WHERE id = $1',
       [id]
@@ -128,6 +151,7 @@ router.put('/users/:id', authenticateToken, requireRole(['admin']), async (req, 
       });
     }
     
+    // Check if email is already taken by another user
     if (email) {
       const emailCheck = await pool.query(
         'SELECT id FROM users WHERE email = $1 AND id != $2',
@@ -142,6 +166,7 @@ router.put('/users/:id', authenticateToken, requireRole(['admin']), async (req, 
       }
     }
     
+    // Build update query dynamically
     const updates = [];
     const values = [];
     let paramCount = 0;
@@ -200,10 +225,12 @@ router.put('/users/:id', authenticateToken, requireRole(['admin']), async (req, 
   }
 });
 
+// Delete user
 router.delete('/users/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
   const { id } = req.params;
   
   try {
+    // Check if user exists
     const userCheck = await pool.query(
       'SELECT id, role FROM users WHERE id = $1',
       [id]
@@ -216,6 +243,7 @@ router.delete('/users/:id', authenticateToken, requireRole(['admin']), async (re
       });
     }
     
+    // Prevent deleting admin users
     if (userCheck.rows[0].role === 'admin') {
       return res.status(400).json({
         success: false,
@@ -223,6 +251,7 @@ router.delete('/users/:id', authenticateToken, requireRole(['admin']), async (re
       });
     }
     
+    // Delete user (cascade will handle related records)
     await pool.query('DELETE FROM users WHERE id = $1', [id]);
     
     res.json({
@@ -239,11 +268,13 @@ router.delete('/users/:id', authenticateToken, requireRole(['admin']), async (re
   }
 });
 
+// Update store
 router.put('/stores/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
   const { id } = req.params;
   const { name, email, address, ownerId } = req.body;
   
   try {
+    // Check if store exists
     const storeCheck = await pool.query(
       'SELECT id FROM stores WHERE id = $1',
       [id]
@@ -256,6 +287,7 @@ router.put('/stores/:id', authenticateToken, requireRole(['admin']), async (req,
       });
     }
     
+    // If ownerId is provided, verify the user exists and is a store owner
     if (ownerId) {
       const ownerResult = await pool.query(
         'SELECT id FROM users WHERE id = $1 AND role = $2',
@@ -270,6 +302,7 @@ router.put('/stores/:id', authenticateToken, requireRole(['admin']), async (req,
       }
     }
     
+    // Build update query dynamically
     const updates = [];
     const values = [];
     let paramCount = 0;
@@ -328,10 +361,12 @@ router.put('/stores/:id', authenticateToken, requireRole(['admin']), async (req,
   }
 });
 
+// Delete store
 router.delete('/stores/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
   const { id } = req.params;
   
   try {
+    // Check if store exists
     const storeCheck = await pool.query(
       'SELECT id FROM stores WHERE id = $1',
       [id]
@@ -344,6 +379,7 @@ router.delete('/stores/:id', authenticateToken, requireRole(['admin']), async (r
       });
     }
     
+    // Delete store (cascade will handle related records)
     await pool.query('DELETE FROM stores WHERE id = $1', [id]);
     
     res.json({
