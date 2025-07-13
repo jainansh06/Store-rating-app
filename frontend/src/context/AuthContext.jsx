@@ -23,44 +23,10 @@ export const AuthProvider = ({ children }) => {
       password: 'Admin123!',
       address: '123 Admin Street, Admin City, Admin State 12345',
       role: 'admin'
-    },
-    {
-      id: 2,
-      name: 'Store Owner User Name Here',
-      email: 'store@example.com',
-      password: 'Store123!',
-      address: '456 Store Avenue, Store City, Store State 67890',
-      role: 'store_owner',
-      storeId: 1
-    },
-    {
-      id: 3,
-      name: 'Normal User Name Here For Testing',
-      email: 'user@example.com',
-      password: 'User123!',
-      address: '789 User Boulevard, User City, User State 11111',
-      role: 'user'
     }
   ]);
 
-  const [stores, setStores] = useState([
-    {
-      id: 1,
-      name: 'Tech Store Electronics and Gadgets',
-      email: 'store@example.com',
-      address: '456 Store Avenue, Store City, Store State 67890',
-      ownerId: 2,
-      ratings: []
-    },
-    {
-      id: 2,
-      name: 'Fashion Boutique Clothing and Accessories',
-      email: 'fashion@example.com',
-      address: '321 Fashion Street, Fashion City, Fashion State 22222',
-      ownerId: null,
-      ratings: []
-    }
-  ]);
+  const [stores, setStores] = useState([]);
 
   const [ratings, setRatings] = useState([]);
 
@@ -133,34 +99,32 @@ export const AuthProvider = ({ children }) => {
   };
 
   const addStore = (storeData) => {
-    const addStore = (storeData, createNewOwner = false) => {
-      let ownerId = storeData.existingOwnerId || null;
-      
-      // If creating a new owner, add them first
-      if (createNewOwner) {
-        const newOwner = {
-          id: users.length + 1,
-          name: `Store Owner for ${storeData.name}`,
-          email: storeData.ownerEmail,
-          password: storeData.ownerPassword,
-          address: storeData.address,
-          role: 'store_owner'
-        };
-        setUsers(prev => [...prev, newOwner]);
-        ownerId = newOwner.id;
-      }
-      
-      const newStore = {
-        id: stores.length + 1,
-        name: storeData.name,
-        email: storeData.email,
+    let ownerId = storeData.existingOwnerId || null;
+    
+    // If creating a new owner, add them first
+    if (storeData.createNewOwner) {
+      const newOwner = {
+        id: users.length + 1,
+        name: `Store Owner for ${storeData.name}`,
+        email: storeData.ownerEmail,
+        password: storeData.ownerPassword,
         address: storeData.address,
-        ownerId: ownerId,
-        ratings: []
+        role: 'store_owner'
       };
-      setStores(prev => [...prev, newStore]);
-      return newStore;
+      setUsers(prev => [...prev, newOwner]);
+      ownerId = newOwner.id;
+    }
+    
+    const newStore = {
+      id: stores.length + 1,
+      name: storeData.name,
+      email: storeData.email,
+      address: storeData.address,
+      ownerId: ownerId,
+      ratings: []
     };
+    setStores(prev => [...prev, newStore]);
+    return newStore;
   };
 
   const submitRating = (storeId, rating) => {
