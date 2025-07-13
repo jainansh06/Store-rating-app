@@ -87,6 +87,17 @@ const validateStoreCreation = [
   body('address')
     .isLength({ max: 400 })
     .withMessage('Address must not exceed 400 characters'),
+  body('ownerEmail')
+    .optional()
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid owner email'),
+  body('ownerPassword')
+    .optional()
+    .isLength({ min: 8, max: 16 })
+    .withMessage('Owner password must be between 8 and 16 characters')
+    .matches(/^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])/)
+    .withMessage('Owner password must contain at least one uppercase letter and one special character'),
   handleValidationErrors
 ];
 
