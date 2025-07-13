@@ -112,8 +112,6 @@ const Login = () => {
         <div style={{ marginTop: '20px', fontSize: '12px', color: '#6b7280' }}>
           <p><strong>Demo Accounts:</strong></p>
           <p>Admin: admin@example.com / Admin123!</p>
-          <p>Store Owner: store@example.com / Store123!</p>
-          <p>User: user@example.com / User123!</p>
         </div>
       </div>
     </div>
