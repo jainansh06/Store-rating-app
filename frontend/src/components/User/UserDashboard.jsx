@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import StoreList from './StoreList';
 import PasswordUpdate from '../Common/PasswordUpdate';
@@ -7,6 +8,19 @@ const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState('stores');
   const { user } = useAuth();
 
+  // Handle hash-based navigation for password change
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#password') {
+        setActiveTab('password');
+        window.location.hash = '';
+      }
+    };
+
+    handleHashChange(); // Check on mount
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
   const tabs = [
     { id: 'stores', label: 'Browse Stores' },
     { id: 'password', label: 'Change Password' }
