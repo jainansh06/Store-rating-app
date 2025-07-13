@@ -17,9 +17,18 @@ const Header = () => {
             <div className="user-name">{user?.name}</div>
             <div className="user-role">{user?.role?.replace('_', ' ')}</div>
           </div>
-          <button onClick={handleLogout} className="btn btn-secondary btn-small">
-            Logout
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              onClick={() => window.location.hash = '#password'} 
+              className="btn btn-secondary btn-small"
+              title="Change Password"
+            >
+              Change Password
+            </button>
+            <button onClick={handleLogout} className="btn btn-secondary btn-small">
+              Logout
+            </button>
+          </div>
         </div>
       </div>
     </header>
